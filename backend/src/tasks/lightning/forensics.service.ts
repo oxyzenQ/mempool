@@ -1,11 +1,11 @@
-import DB from '../../database';
-import logger from '../../logger';
-import channelsApi from '../../api/explorer/channels.api';
 import bitcoinApi from '../../api/bitcoin/bitcoin-api-factory';
-import config from '../../config';
 import { IEsploraApi } from '../../api/bitcoin/esplora-api.interface';
 import { Common } from '../../api/common';
+import channelsApi from '../../api/explorer/channels.api';
 import { ILightningApi } from '../../api/lightning/lightning-api.interface';
+import config from '../../config';
+import DB from '../../database';
+import logger from '../../logger';
 
 const tempCacheSize = 10000;
 
@@ -207,50 +207,50 @@ class ForensicsService {
 
   private findLightningScript(vin: IEsploraApi.Vin): number {
     const topElement = vin.witness?.length > 2 ? vin.witness[vin.witness.length - 2] : null;
-      if (/^OP_IF OP_PUSHBYTES_33 \w{66} OP_ELSE OP_PUSH(NUM_\d+|BYTES_(1 \w{2}|2 \w{4})) OP_CSV OP_DROP OP_PUSHBYTES_33 \w{66} OP_ENDIF OP_CHECKSIG$/.test(vin.inner_witnessscript_asm)) {
-        // https://github.com/lightning/bolts/blob/master/03-transactions.md#commitment-transaction-outputs
-        if (topElement === '01') {
-          // top element is '01' to get in the revocation path
-          // 'Revoked Lightning Force Close';
-          // Penalty force closed
-          return 2;
-        } else {
-          // top element is '', this is a delayed to_local output
-          // 'Lightning Force Close';
-          return 3;
-        }
-      } else if (
-        /^OP_DUP OP_HASH160 OP_PUSHBYTES_20 \w{40} OP_EQUAL OP_IF OP_CHECKSIG OP_ELSE OP_PUSHBYTES_33 \w{66} OP_SWAP OP_SIZE OP_PUSHBYTES_1 20 OP_EQUAL OP_NOTIF OP_DROP OP_PUSHNUM_2 OP_SWAP OP_PUSHBYTES_33 \w{66} OP_PUSHNUM_2 OP_CHECKMULTISIG OP_ELSE OP_HASH160 OP_PUSHBYTES_20 \w{40} OP_EQUALVERIFY OP_CHECKSIG OP_ENDIF (OP_PUSHNUM_1 OP_CSV OP_DROP |)OP_ENDIF$/.test(vin.inner_witnessscript_asm) ||
-        /^OP_DUP OP_HASH160 OP_PUSHBYTES_20 \w{40} OP_EQUAL OP_IF OP_CHECKSIG OP_ELSE OP_PUSHBYTES_33 \w{66} OP_SWAP OP_SIZE OP_PUSHBYTES_1 20 OP_EQUAL OP_IF OP_HASH160 OP_PUSHBYTES_20 \w{40} OP_EQUALVERIFY OP_PUSHNUM_2 OP_SWAP OP_PUSHBYTES_33 \w{66} OP_PUSHNUM_2 OP_CHECKMULTISIG OP_ELSE OP_DROP OP_PUSHBYTES_3 \w{6} OP_CLTV OP_DROP OP_CHECKSIG OP_ENDIF (OP_PUSHNUM_1 OP_CSV OP_DROP |)OP_ENDIF$/.test(vin.inner_witnessscript_asm)
-      ) {
-        // https://github.com/lightning/bolts/blob/master/03-transactions.md#offered-htlc-outputs
-        // https://github.com/lightning/bolts/blob/master/03-transactions.md#received-htlc-outputs
-        if (topElement?.length === 66) {
-          // top element is a public key
-          // 'Revoked Lightning HTLC'; Penalty force closed
-          return 4;
-        } else if (topElement) {
-          // top element is a preimage
-          // 'Lightning HTLC';
-          return 5;
-        } else {
-          // top element is '' to get in the expiry of the script
-          // 'Expired Lightning HTLC';
-          return 6;
-        }
-      } else if (/^OP_PUSHBYTES_33 \w{66} OP_CHECKSIG OP_IFDUP OP_NOTIF OP_PUSHNUM_16 OP_CSV OP_ENDIF$/.test(vin.inner_witnessscript_asm)) {
-        // https://github.com/lightning/bolts/blob/master/03-transactions.md#to_local_anchor-and-to_remote_anchor-output-option_anchors
-        if (topElement) {
-          // top element is a signature
-          // 'Lightning Anchor';
-          return 7;
-        } else {
-          // top element is '', it has been swept after 16 blocks
-          // 'Swept Lightning Anchor';
-          return 8;
-        }
+    if (/^OP_IF OP_PUSHBYTES_33 \w{66} OP_ELSE OP_PUSH(NUM_\d+|BYTES_(1 \w{2}|2 \w{4})) OP_CSV OP_DROP OP_PUSHBYTES_33 \w{66} OP_ENDIF OP_CHECKSIG$/.test(vin.inner_witnessscript_asm)) {
+      // https://github.com/lightning/bolts/blob/master/03-transactions.md#commitment-transaction-outputs
+      if (topElement === '01') {
+        // top element is '01' to get in the revocation path
+        // 'Revoked Lightning Force Close';
+        // Penalty force closed
+        return 2;
+      } else {
+        // top element is '', this is a delayed to_local output
+        // 'Lightning Force Close';
+        return 3;
       }
-      return 1;
+    } else if (
+      /^OP_DUP OP_HASH160 OP_PUSHBYTES_20 \w{40} OP_EQUAL OP_IF OP_CHECKSIG OP_ELSE OP_PUSHBYTES_33 \w{66} OP_SWAP OP_SIZE OP_PUSHBYTES_1 20 OP_EQUAL OP_NOTIF OP_DROP OP_PUSHNUM_2 OP_SWAP OP_PUSHBYTES_33 \w{66} OP_PUSHNUM_2 OP_CHECKMULTISIG OP_ELSE OP_HASH160 OP_PUSHBYTES_20 \w{40} OP_EQUALVERIFY OP_CHECKSIG OP_ENDIF (OP_PUSHNUM_1 OP_CSV OP_DROP |)OP_ENDIF$/.test(vin.inner_witnessscript_asm) ||
+      /^OP_DUP OP_HASH160 OP_PUSHBYTES_20 \w{40} OP_EQUAL OP_IF OP_CHECKSIG OP_ELSE OP_PUSHBYTES_33 \w{66} OP_SWAP OP_SIZE OP_PUSHBYTES_1 20 OP_EQUAL OP_IF OP_HASH160 OP_PUSHBYTES_20 \w{40} OP_EQUALVERIFY OP_PUSHNUM_2 OP_SWAP OP_PUSHBYTES_33 \w{66} OP_PUSHNUM_2 OP_CHECKMULTISIG OP_ELSE OP_DROP OP_PUSHBYTES_3 \w{6} OP_CLTV OP_DROP OP_CHECKSIG OP_ENDIF (OP_PUSHNUM_1 OP_CSV OP_DROP |)OP_ENDIF$/.test(vin.inner_witnessscript_asm)
+    ) {
+      // https://github.com/lightning/bolts/blob/master/03-transactions.md#offered-htlc-outputs
+      // https://github.com/lightning/bolts/blob/master/03-transactions.md#received-htlc-outputs
+      if (topElement?.length === 66) {
+        // top element is a public key
+        // 'Revoked Lightning HTLC'; Penalty force closed
+        return 4;
+      } else if (topElement) {
+        // top element is a preimage
+        // 'Lightning HTLC';
+        return 5;
+      } else {
+        // top element is '' to get in the expiry of the script
+        // 'Expired Lightning HTLC';
+        return 6;
+      }
+    } else if (/^OP_PUSHBYTES_33 \w{66} OP_CHECKSIG OP_IFDUP OP_NOTIF OP_PUSHNUM_16 OP_CSV OP_ENDIF$/.test(vin.inner_witnessscript_asm)) {
+      // https://github.com/lightning/bolts/blob/master/03-transactions.md#to_local_anchor-and-to_remote_anchor-output-option_anchors
+      if (topElement) {
+        // top element is a signature
+        // 'Lightning Anchor';
+        return 7;
+      } else {
+        // top element is '', it has been swept after 16 blocks
+        // 'Swept Lightning Anchor';
+        return 8;
+      }
+    }
+    return 1;
   }
 
   // If a channel open tx spends funds from a another channel transaction,
@@ -421,7 +421,7 @@ class ForensicsService {
         // attribute outputs to each counterparty, and sum up total known balances
         prevChannel.outputs[input.vout].node = prevLocal;
         const isPenalty = prevChannel.outputs.filter((out) => out.type === 2 || out.type === 4)?.length > 0;
-        const normalOutput = [1,3].includes(prevChannel.outputs[input.vout].type);
+        const normalOutput = [1, 3].includes(prevChannel.outputs[input.vout].type);
         const mutualClose = ((prevChannel.status === 2 || prevChannel.status === 'closed') && prevChannel.closing_reason === 1);
         let localClosingBalance = 0;
         let remoteClosingBalance = 0;
@@ -430,7 +430,7 @@ class ForensicsService {
             // penalty close, so local node takes everything
             localClosingBalance += output.value;
           } else if (output.node) {
-            // this output determinstically linked to one of the counterparties
+            // this output deterministically linked to one of the counterparties
             if (output.node === prevLocal) {
               localClosingBalance += output.value;
             } else {
@@ -449,7 +449,7 @@ class ForensicsService {
           const initiatorSide = initiator === 'remote' ? prevRemote : prevLocal;
           prevChannel.closed_by = prevChannel[`node${initiatorSide}_public_key`];
         }
-  
+
         // save changes to the closing channel
         await channelsApi.$updateClosingInfo(prevChannel);
       } else {

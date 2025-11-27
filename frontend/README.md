@@ -121,7 +121,7 @@ https://www.transifex.com/mempool/mempool/dashboard/
 * Japanese @wiz @japananon
 * Norwegian @T82771355
 * Polish @maciejsoltysiak
-* Portugese @jgcastro1985
+* Portuguese @jgcastro1985
 * Slovenian @thepkbadger
 * Finnish @bio_bitcoin
 * Swedish @softsimon_

@@ -226,12 +226,12 @@ export default class CLightningClient extends EventEmitter implements AbstractLi
   call(method, args = []): Promise<any> {
     const _self = this;
 
-    const callInt = ++this.reqcount;
+    const callId = ++this.reqcount;
     const sendObj = {
       jsonrpc: '2.0',
       method,
       params: args,
-      id: '' + callInt
+      id: '' + callId
     };
 
 
@@ -239,7 +239,7 @@ export default class CLightningClient extends EventEmitter implements AbstractLi
     return this.clientConnectionPromise
       .then(() => new Promise((resolve, reject) => {
         // Wait for a response
-        this.once('res:' + callInt, res => res.error == null
+        this.once('res:' + callId, res => res.error == null
           ? resolve(res.result)
           : reject(new LightningError(res.error))
         );

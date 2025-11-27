@@ -1,40 +1,37 @@
 import config from '../config';
-import bitcoinApi, { bitcoinCoreApi } from './bitcoin/bitcoin-api-factory';
-import logger from '../logger';
-import memPool from './mempool';
-import { BlockExtended, BlockExtension, BlockSummary, PoolTag, TransactionExtended, TransactionMinerInfo, CpfpSummary, MempoolTransactionExtended, TransactionClassified, BlockAudit, TransactionAudit } from '../mempool.interfaces';
-import { Common } from './common';
-import diskCache from './disk-cache';
-import transactionUtils from './transaction-utils';
-import bitcoinClient from './bitcoin/bitcoin-client';
-import { IBitcoinApi } from './bitcoin/bitcoin-api.interface';
-import { IEsploraApi } from './bitcoin/esplora-api.interface';
-import poolsRepository from '../repositories/PoolsRepository';
-import blocksRepository from '../repositories/BlocksRepository';
-import loadingIndicators from './loading-indicators';
-import BitcoinApi from './bitcoin/bitcoin-api';
-import BlocksRepository from '../repositories/BlocksRepository';
-import HashratesRepository from '../repositories/HashratesRepository';
+import database from '../database';
 import indexer from '../indexer';
-import poolsParser from './pools-parser';
-import BlocksSummariesRepository from '../repositories/BlocksSummariesRepository';
+import logger from '../logger';
+import { BlockAudit, BlockExtended, BlockExtension, BlockSummary, CpfpSummary, MempoolTransactionExtended, PoolTag, TransactionAudit, TransactionClassified, TransactionExtended, TransactionMinerInfo } from '../mempool.interfaces';
+import AccelerationRepository from '../repositories/AccelerationRepository';
 import BlocksAuditsRepository from '../repositories/BlocksAuditsRepository';
-import cpfpRepository from '../repositories/CpfpRepository';
-import mining from './mining/mining';
+import { default as blocksRepository, default as BlocksRepository } from '../repositories/BlocksRepository';
+import BlocksSummariesRepository from '../repositories/BlocksSummariesRepository';
+import { default as cpfpRepository, default as CpfpRepository } from '../repositories/CpfpRepository';
 import DifficultyAdjustmentsRepository from '../repositories/DifficultyAdjustmentsRepository';
+import HashratesRepository from '../repositories/HashratesRepository';
+import poolsRepository from '../repositories/PoolsRepository';
 import PricesRepository from '../repositories/PricesRepository';
 import priceUpdater from '../tasks/price-updater';
-import chainTips from './chain-tips';
-import websocketHandler from './websocket-handler';
-import redisCache from './redis-cache';
-import rbfCache from './rbf-cache';
-import { calcBitsDifference } from './difficulty-adjustment';
-import AccelerationRepository from '../repositories/AccelerationRepository';
-import { calculateFastBlockCpfp, calculateGoodBlockCpfp } from './cpfp';
-import mempool from './mempool';
-import CpfpRepository from '../repositories/CpfpRepository';
 import { parseDATUMTemplateCreator } from '../utils/bitcoin-script';
-import database from '../database';
+import BitcoinApi from './bitcoin/bitcoin-api';
+import bitcoinApi, { bitcoinCoreApi } from './bitcoin/bitcoin-api-factory';
+import { IBitcoinApi } from './bitcoin/bitcoin-api.interface';
+import bitcoinClient from './bitcoin/bitcoin-client';
+import { IEsploraApi } from './bitcoin/esplora-api.interface';
+import chainTips from './chain-tips';
+import { Common } from './common';
+import { calculateFastBlockCpfp, calculateGoodBlockCpfp } from './cpfp';
+import { calcBitsDifference } from './difficulty-adjustment';
+import diskCache from './disk-cache';
+import loadingIndicators from './loading-indicators';
+import { default as memPool, default as mempool } from './mempool';
+import mining from './mining/mining';
+import poolsParser from './pools-parser';
+import rbfCache from './rbf-cache';
+import redisCache from './redis-cache';
+import transactionUtils from './transaction-utils';
+import websocketHandler from './websocket-handler';
 
 class Blocks {
   private blocks: BlockExtended[] = [];
@@ -321,7 +318,7 @@ class Blocks {
     if (coinStatsIndex !== null && coinStatsIndex.best_block_height >= block.height) {
       const txoutset = await bitcoinClient.getTxoutSetinfo('none', block.height);
       extras.utxoSetSize = txoutset.txouts,
-      extras.totalInputAmt = Math.round(txoutset.block_info.prevout_spent * 100000000);
+        extras.totalInputAmt = Math.round(txoutset.block_info.prevout_spent * 100000000);
     } else {
       extras.utxoSetSize = null;
       extras.totalInputAmt = null;
@@ -562,7 +559,7 @@ class Blocks {
   /**
    * [INDEXING] Index transaction CPFP data for all blocks
    */
-   public async $generateCPFPDatabase(): Promise<void> {
+  public async $generateCPFPDatabase(): Promise<void> {
     if (Common.cpfpIndexingEnabled() === false) {
       return;
     }
@@ -1025,7 +1022,7 @@ class Blocks {
             }]);
             this.updateTimerProgress(timer, `saved prices for ${this.currentBlockHeight}`);
           } else {
-            logger.debug(`Cannot save block price for ${blockExtended.height} because the price updater hasnt completed yet. Trying again in 10 seconds.`, logger.tags.mining);
+            logger.debug(`Cannot save block price for ${blockExtended.height} because the price updater hasn't completed yet. Trying again in 10 seconds.`, logger.tags.mining);
             indexer.scheduleSingleTask('blocksPrices', 10000);
           }
 
@@ -1153,7 +1150,7 @@ class Blocks {
         const quarterEpochBlock = await bitcoinApi.$getBlock(quarterEpochBlockHash);
         this.quarterEpochBlockTime = quarterEpochBlock?.timestamp;
       } catch (e) {
-      this.quarterEpochBlockTime = null;
+        this.quarterEpochBlockTime = null;
         logger.warn('failed to update last epoch block time: ' + (e instanceof Error ? e.message : e));
       }
     }
@@ -1181,7 +1178,7 @@ class Blocks {
       logger.warn(`Chain divergence detected at block ${blockExtended.height}, re-indexing most recent data`, logger.tags.mining);
       this.updateTimerProgress(timer, `reconnecting diverged chain from ${this.currentBlockHeight}`);
       const newBlocks: BlockExtended[] = [];
-    // walk back along the chain until we reach the fork point
+      // walk back along the chain until we reach the fork point
       while (currentlyIndexed !== null && forkTail.previousblockhash !== currentlyIndexed.id) {
         const newBlock = await this.$indexBlock(forkTail.previousblockhash);
         await blocksRepository.$setCanonicalBlockAtHeight(newBlock.id, newBlock.height);
@@ -1252,7 +1249,7 @@ class Blocks {
     }
 
     if (!block) {
-      // dont' bother trying to fetch orphan blocks from esplora
+      // don't bother trying to fetch orphan blocks from esplora
       block = await (chainTips.isOrphaned(hash) ? bitcoinCoreApi.$getBlock(hash) : bitcoinApi.$getBlock(hash));
     }
 
@@ -1291,8 +1288,7 @@ class Blocks {
   }
 
   public async $getStrippedBlockTransactions(hash: string, skipMemoryCache = false,
-    skipDBLookup = false, cpfpSummary?: CpfpSummary, blockHeight?: number): Promise<TransactionClassified[]>
-  {
+    skipDBLookup = false, cpfpSummary?: CpfpSummary, blockHeight?: number): Promise<TransactionClassified[]> {
     if (skipMemoryCache === false) {
       // Check the memory cache
       const cachedSummary = this.getBlockSummaries().find((b) => b.id === hash);
@@ -1365,15 +1361,15 @@ class Blocks {
 
   /**
    * Get 15 blocks
-   * 
+   *
    * Internally this function uses two methods to get the blocks, and
    * the method is automatically selected:
    *  - Using previous block hash links
    *  - Using block height
-   * 
-   * @param fromHeight 
-   * @param limit 
-   * @returns 
+   *
+   * @param fromHeight
+   * @param limit
+   * @returns
    */
   public async $getBlocks(fromHeight?: number, limit: number = 15): Promise<BlockExtended[]> {
     let currentHeight = fromHeight !== undefined ? fromHeight : this.currentBlockHeight;
@@ -1405,9 +1401,9 @@ class Blocks {
 
   /**
    * Used for bulk block data query
-   * 
-   * @param fromHeight 
-   * @param toHeight 
+   *
+   * @param fromHeight
+   * @param toHeight
    */
   public async $getBlocksBetweenHeight(fromHeight: number, toHeight: number): Promise<any> {
     if (!Common.indexingEnabled()) {

@@ -6,9 +6,9 @@ import PricesRepository, { ApiPrice, MAX_PRICES } from '../repositories/PricesRe
 import BitfinexApi from './price-feeds/bitfinex-api';
 import BitflyerApi from './price-feeds/bitflyer-api';
 import CoinbaseApi from './price-feeds/coinbase-api';
+import FreeCurrencyApi from './price-feeds/free-currency-api';
 import GeminiApi from './price-feeds/gemini-api';
 import KrakenApi from './price-feeds/kraken-api';
-import FreeCurrencyApi from './price-feeds/free-currency-api';
 
 export interface PriceFeed {
   name: string;
@@ -38,8 +38,8 @@ function getMedian(arr: number[]): number {
   const sortedArr = arr.slice().sort((a, b) => a - b);
   const mid = Math.floor(sortedArr.length / 2);
   return sortedArr.length % 2 !== 0
-      ? sortedArr[mid]
-      : (sortedArr[mid - 1] + sortedArr[mid]) / 2;
+    ? sortedArr[mid]
+    : (sortedArr[mid - 1] + sortedArr[mid]) / 2;
 }
 
 class PriceUpdater {
@@ -126,7 +126,7 @@ class PriceUpdater {
 
   /**
    * We execute this function before the websocket initialization since
-   * the websocket init is not done asyncronously
+   * the websocket init is not done asynchronously
    */
   public async $initializeLatestPriceWithDb(): Promise<void> {
     this.latestPrices = await PricesRepository.$getLatestConversionRates();
@@ -464,7 +464,7 @@ class PriceUpdater {
       }
 
       const prices: ApiPrice = this.getEmptyPricesObj();
-      
+
       let willInsert = false;
       for (const conversionCurrency of this.newCurrencies.concat(missingLegacyCurrencies)) {
         if (conversionRates[yearMonthTimestamp][conversionCurrency] > 0 && priceTime.USD * conversionRates[yearMonthTimestamp][conversionCurrency] < MAX_PRICES[conversionCurrency]) {
@@ -474,7 +474,7 @@ class PriceUpdater {
           prices[conversionCurrency] = 0;
         }
       }
-      
+
       if (willInsert) {
         await PricesRepository.$saveAdditionalCurrencyPrices(priceTime.time, prices, missingLegacyCurrencies);
         ++totalInserted;

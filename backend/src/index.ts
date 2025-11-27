@@ -1,54 +1,52 @@
-import express from 'express';
-import { Application, Request, Response, NextFunction } from 'express';
-import * as http from 'http';
-import * as WebSocket from 'ws';
-import bitcoinApi from './api/bitcoin/bitcoin-api-factory';
-import cluster from 'cluster';
-import DB from './database';
-import config from './config';
-import blocks from './api/blocks';
-import memPool from './api/mempool';
-import diskCache from './api/disk-cache';
-import statistics from './api/statistics/statistics';
-import websocketHandler from './api/websocket-handler';
-import logger from './logger';
-import backendInfo from './api/backend-info';
-import loadingIndicators from './api/loading-indicators';
-import mempool from './api/mempool';
-import elementsParser from './api/liquid/elements-parser';
-import databaseMigration from './api/database-migration';
-import syncAssets from './sync-assets';
-import icons from './api/liquid/icons';
-import { Common } from './api/common';
-import poolsUpdater from './tasks/pools-updater';
-import indexer from './indexer';
-import nodesRoutes from './api/explorer/nodes.routes';
-import channelsRoutes from './api/explorer/channels.routes';
-import generalLightningRoutes from './api/explorer/general.routes';
-import lightningStatsUpdater from './tasks/lightning/stats-updater.service';
-import networkSyncService from './tasks/lightning/network-sync.service';
-import statisticsRoutes from './api/statistics/statistics.routes';
-import pricesRoutes from './api/prices/prices.routes';
-import miningRoutes from './api/mining/mining-routes';
-import liquidRoutes from './api/liquid/liquid.routes';
-import bitcoinRoutes from './api/bitcoin/bitcoin.routes';
-import servicesRoutes from './api/services/services-routes';
-import fundingTxFetcher from './tasks/lightning/sync-tasks/funding-tx-fetcher';
-import forensicsService from './tasks/lightning/forensics.service';
-import priceUpdater from './tasks/price-updater';
-import chainTips from './api/chain-tips';
 import { AxiosError } from 'axios';
+import cluster from 'cluster';
+import express, { Application, NextFunction, Request, Response } from 'express';
+import * as http from 'http';
 import v8 from 'v8';
-import { formatBytes, getBytesUnit } from './utils/format';
-import redisCache from './api/redis-cache';
-import accelerationApi from './api/services/acceleration';
+import * as WebSocket from 'ws';
+import aboutRoutes from './api/about.routes';
+import accelerationRoutes from './api/acceleration/acceleration.routes';
+import backendInfo from './api/backend-info';
+import bitcoinApi from './api/bitcoin/bitcoin-api-factory';
 import bitcoinCoreRoutes from './api/bitcoin/bitcoin-core.routes';
 import bitcoinSecondClient from './api/bitcoin/bitcoin-second-client';
-import accelerationRoutes from './api/acceleration/acceleration.routes';
-import aboutRoutes from './api/about.routes';
+import bitcoinRoutes from './api/bitcoin/bitcoin.routes';
+import blocks from './api/blocks';
+import chainTips from './api/chain-tips';
+import { Common } from './api/common';
+import databaseMigration from './api/database-migration';
+import diskCache from './api/disk-cache';
+import channelsRoutes from './api/explorer/channels.routes';
+import generalLightningRoutes from './api/explorer/general.routes';
+import nodesRoutes from './api/explorer/nodes.routes';
+import elementsParser from './api/liquid/elements-parser';
+import icons from './api/liquid/icons';
+import liquidRoutes from './api/liquid/liquid.routes';
+import loadingIndicators from './api/loading-indicators';
+import { default as memPool, default as mempool } from './api/mempool';
 import mempoolBlocks from './api/mempool-blocks';
-import walletApi from './api/services/wallets';
+import miningRoutes from './api/mining/mining-routes';
+import pricesRoutes from './api/prices/prices.routes';
+import redisCache from './api/redis-cache';
+import accelerationApi from './api/services/acceleration';
+import servicesRoutes from './api/services/services-routes';
 import stratumApi from './api/services/stratum';
+import walletApi from './api/services/wallets';
+import statistics from './api/statistics/statistics';
+import statisticsRoutes from './api/statistics/statistics.routes';
+import websocketHandler from './api/websocket-handler';
+import config from './config';
+import DB from './database';
+import indexer from './indexer';
+import logger from './logger';
+import syncAssets from './sync-assets';
+import forensicsService from './tasks/lightning/forensics.service';
+import networkSyncService from './tasks/lightning/network-sync.service';
+import lightningStatsUpdater from './tasks/lightning/stats-updater.service';
+import fundingTxFetcher from './tasks/lightning/sync-tasks/funding-tx-fetcher';
+import poolsUpdater from './tasks/pools-updater';
+import priceUpdater from './tasks/price-updater';
+import { formatBytes, getBytesUnit } from './utils/format';
 
 class Server {
   private wss: WebSocket.Server | undefined;
@@ -162,7 +160,7 @@ class Server {
 
     await poolsUpdater.updatePoolsJson(); // Needs to be done before loading the disk cache because we sometimes wipe it
     if (config.DATABASE.ENABLED === true && config.MEMPOOL.ENABLED && ['mainnet', 'testnet', 'signet', 'testnet4'].includes(config.MEMPOOL.NETWORK) && !poolsUpdater.currentSha) {
-      logger.err(`Failed to retreive pools-v2.json sha, cannot run block indexing. Please make sure you've set valid urls in your mempool-config.json::MEMPOOL::POOLS_JSON_URL and mempool-config.json::MEMPOOL::POOLS_JSON_TREE_UR, aborting now`);
+      logger.err(`Failed to retrieve pools-v2.json sha, cannot run block indexing. Please make sure you've set valid urls in your mempool-config.json::MEMPOOL::POOLS_JSON_URL and mempool-config.json::MEMPOOL::POOLS_JSON_TREE_URL, aborting now`);
       return process.exit(1);
     }
 
@@ -300,7 +298,7 @@ class Server {
       await networkSyncService.$startService();
       await lightningStatsUpdater.$startService();
       await forensicsService.$startService();
-    } catch(e) {
+    } catch (e) {
       logger.err(`Exception in $runLightningBackend. Restarting in 1 minute. Reason: ${(e instanceof Error ? e.message : e)}`);
       await Common.sleep$(1000 * 60);
       this.$runLightningBackend();

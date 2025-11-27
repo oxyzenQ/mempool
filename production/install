@@ -65,7 +65,7 @@ ELEMENTS_ELECTRS_INSTALL=ON
 ELEMENTS_ELECTRS_LIGHT_MODE=ON
 ELEMENTS_ELECTRS_COMPACTION=OFF
 
-# automaitcally configure firewall
+# automatically configure firewall
 FIREWALL_CONFIGURE=ON
 
 ############
@@ -1474,7 +1474,7 @@ fi
 
 if [ "${UNFURL_INSTALL}" = ON ];then
 
-    echo "[*] Insalling Unfurl source"
+    echo "[*] Installing Unfurl source"
     case $OS in
 
         FreeBSD)
